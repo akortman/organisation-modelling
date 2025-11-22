@@ -1,0 +1,10 @@
+# Modelling-related files
+*.stl
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# macos
+.DS_Store

@@ -1,0 +1,6 @@
+[submodule "submodules/BOSL2"]
+	path = submodules/BOSL2
+	url = git@github.com:BelfrySCAD/BOSL2.git
+[submodule "submodules/QuackWorks"]
+	path = submodules/QuackWorks
+	url = git@github.com:AndyLevesque/QuackWorks.git
