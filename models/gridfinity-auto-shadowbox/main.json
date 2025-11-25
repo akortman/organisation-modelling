@@ -1,0 +1,17 @@
+{
+    "fileFormatVersion": "1",
+    "parameterSets": {
+        "Irwin Vice Grips": {
+            "chamfer": "false",
+            "chamferLayerSize": "0.10000000000000001",
+            "chamferLayerSizePreview": "0.5",
+            "chamferSize": "2",
+            "cupDepth": "7",
+            "cupHeight": "3",
+            "cupWidth": "2.5",
+            "displayMode": "normal",
+            "mode": "cup",
+            "shape": "irwin-vice-grips.dxf"
+        }
+    }
+}
