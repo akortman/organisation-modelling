@@ -2,9 +2,16 @@ d = 28;
 boardThickness = 6.8;
 eps = 0.01;
 t = 0.5;
+rearGridEnabled = true;
+rearPanelLite = true;
+rearPanelMode = "deboss"; // [deboss,emboss]
+rearChannelsEnabled = false;
+sideGridEnabled = false;
 sidesLite = true;
 topLite = false;
 sidePanelSize = [2, 2];
+rearPanelSize = [2, 3];
+chargerScale = 0.99;
 
 Chamfer_Top_Right = false;
 include <../../submodules/BOSL2/std.scad>
@@ -40,7 +47,9 @@ module wallmount() {
   ];
   fillRadius = 12;
   translate([3.422, 0, t]) {
-    translate([-62.845 / 2, -79.8 / 2, 0]) import("./charger-wallmount.stl");
+    translate([-62.845 / 2, -79.8 / 2, 0])
+      scale(chargerScale)
+        import("./charger-wallmount.stl");
     color("red")for (f = fillHoles) {
       translate(f[0]) cylinder(f[1], fillRadius / 2, fillRadius / 2);
     }
@@ -58,20 +67,49 @@ module sidePanel(chamfers = "Corners", connector_holes = false) {
   }
 }
 
-module sidePanelCutouts() {
-  w = 28 * sidePanelSize[0] - 2 * eps;
-  h = 28 * sidePanelSize[1] - 2 * eps;
-  t = sidesLite ? 4 : 6.8;
-  difference() {
-    translate([-w / 2, -h / 2, -t])
-      cube([w, h, t - 2 * eps]);
-    sidePanel(chamfers="none");
+module rearPanel(chamfers = "Corners", connector_holes = false, screw_mounting = "None") {
+  color("green") if (rearPanelLite) {
+    translate([0, 0, -4 / 2]) openGridLite(rearPanelSize[0], rearPanelSize[1], Chamfers=chamfers, Connector_Holes=connector_holes, Screw_Mounting=screw_mounting);
+  } else {
+    translate([0, 0, -6.8 / 2]) {
+      openGrid(rearPanelSize[0], rearPanelSize[1], Chamfers=chamfers, Connector_Holes=connector_holes, Screw_Mounting=screw_mounting);
+    }
   }
+}
+
+module openGridNegative(size, lite = false) {
+  w = 28 * size[0];
+  h = 28 * size[1];
+  t = lite ? 4 : 6.8;
+  difference() {
+    translate([-w / 2, -h / 2, -t] + eps * [1, 1, 1])
+      cube([w, h, t * 2] - 2 * eps * [1, 1, 0]);
+    children();
+  }
+}
+
+module sidePanelCutouts() {
+  //w = 28 * sidePanelSize[0] - 2 * eps;
+  //h = 28 * sidePanelSize[1] - 2 * eps;
+  //t = sidesLite ? 4 : 6.8;
+  //difference() {
+  //  translate([-w / 2, -h / 2, -t])
+  //    cube([w, h, t - 2 * eps]);
+  //  sidePanel(chamfers="none");
+  //}
+  openGridNegative(sidePanelSize, sidesLite)
+    sidePanel(chamfers="none");
+}
+
+module rearPanelCutouts() {
+  openGridNegative(rearPanelSize, rearPanelLite)
+    rearPanel(chamfers="none");
 }
 
 module chargerProfileSide() {
   rotate([-90, 0, 0]) projection(cut=false) rotate([90, 0, 0]) wallmount();
 }
+
 module chargerProfileFront() {
   projection(cut=false)
     rotate([0, 90, 0]) wallmount();
@@ -87,40 +125,31 @@ module chargerHolder() {
   module sp2Location() {
     translate([0, -28 * 1.5, 28 * sidePanelSize[1] / 2]) rotate([90, 180, 0]) children();
   }
-
-  fillRadius = 40;
-  module cornerFill() {
-    linear_extrude(28 * 2)
-      translate([-fillRadius, -fillRadius])
-        difference() {
-          square([fillRadius, fillRadius]);
-          color("red") circle(fillRadius);
-        }
+  module rearPanelLocation() {
+    panelThickness = rearPanelLite ? 4 : 6.8;
+    //translate([rearPanelMode == "deboss" ? panelThickness : 0, 0, 0])
+    translate([-eps + -28 * 2, 0, 28 * rearPanelSize[0]] / 2)
+      rotate([0, -90, 0])
+        children();
   }
 
-  difference() {
-    union() {
-      plate(2, 3, center=true);
-      wallmount();
-      sp1Location() sidePanel();
-      sp2Location() sidePanel();
-
-      // fill corners
-      difference() {
-        union() {
-          translate([-28, -1.5 * 28 + (sidesLite ? 4 : 6.8), 0])
-            translate()
-              rotate([0, 0, 180])
-                cornerFill();
-          translate([-28, 1.5 * 28 - (sidesLite ? 4 : 6.8), 0])
-            translate()
-              rotate([0, 0, 90])
-                cornerFill();
-        }
-        // remove a chamfer to match the sides
-        color("red")
-          translate([-28, 1.5 * 28, 28 * 2])
-            rotate([0, -90, 90])
+  module supportVolume() {
+    fillRadius = 40;
+    module cornerFill() {
+      linear_extrude(28 * 2)
+        translate([-fillRadius, -fillRadius])
+          difference() {
+            square([fillRadius, fillRadius]);
+            color("red") circle(fillRadius);
+          }
+      rotate([0, 0, 180])
+        cube([28 * 2, 4, 28 * 2]);
+    }
+    module sideShoulderNegative() {
+      module singleSide() {
+        translate([-28 * 1, 1.5 * 28, 28 * 2])
+          rotate([90, 0, 0])
+            rotate([0, 90, 0])
               linear_extrude(28 * 3)
                 polygon(
                   [
@@ -129,26 +158,89 @@ module chargerHolder() {
                     [eps, -4.2 - eps],
                   ],
                 );
-        // cable management cutouts
-        //color("purple") {
-        //    translate([-28/2, -28*1.5 + (sidesLite ? 4 : 6.8), -eps])
-        //    cylinder(28*3 + eps, sideCableManagementCutoutDiameter/2, sideCableManagementCutoutDiameter/2);
-        //}
-        //color("purple") {
-        //    translate([-28/2, 28*1.5 - (sidesLite ? 4 : 6.8), -eps])
-        //    cylinder(28*3 + eps, sideCableManagementCutoutDiameter/2, sideCableManagementCutoutDiameter/2);
-        //}
       }
+      singleSide();
+      scale([1, -1, 1]) singleSide();
     }
-    sp1Location() sidePanelCutouts();
-    sp2Location() sidePanelCutouts();
+    module verticalChamferNegative() {
+      module singleSide() {
+        translate([28, 1.5 * 28, 2 * 28 - eps])
+          rotate([90, 90, 0])
+            rotate([0, 90, 0])
+              linear_extrude(28 * 2 + 2 * eps)
+                polygon(
+                  [
+                    [eps, eps],
+                    [-4.2 - eps, eps],
+                    [eps, -4.2 - eps],
+                  ],
+                );
+      }
+      singleSide();
+      scale([1, -1, 1]) singleSide();
+    }
+    // fill corners
+    color("purple")
+      difference() {
+        union() {
+          translate([-28, -1.5 * 28 + (sideGridEnabled ? (sidesLite ? 4 : 6.8) : 0), 0])
+            rotate([0, 0, 180])
+              cornerFill();
+          scale([1, -1, 1])
+            translate([-28, -1.5 * 28 + (sideGridEnabled ? (sidesLite ? 4 : 6.8) : 0), 0])
+              rotate([0, 0, 180])
+                cornerFill();
+        }
+        // remove a chamfer to match the sides
+        if (!rearGridEnabled) {
+          color("red")
+            translate([-28, 1.5 * 28, 28 * 2])
+              rotate([0, -90, 90])
+                linear_extrude(28 * 3)
+                  polygon(
+                    [
+                      [eps, eps],
+                      [-4.2 - eps, eps],
+                      [eps, -4.2 - eps],
+                    ],
+                  );
+        }
+        if (!sideGridEnabled) {
+          color("orange") sideShoulderNegative();
+          verticalChamferNegative();
+        }
+      }
+  }
+
+  difference() {
+    union() {
+      plate(2, 3, center=true);
+      wallmount(); if (sideGridEnabled) {
+        sp1Location() sidePanel();
+        sp2Location() sidePanel();
+      }
+      if (rearGridEnabled) {
+        rearPanelLocation() rearPanel();
+      }
+
+      supportVolume();
+    }
+    if (sideGridEnabled) {
+      sp1Location() sidePanelCutouts();
+      sp2Location() sidePanelCutouts();
+    }
+    if (rearGridEnabled) {
+      rearPanelLocation() rearPanelCutouts();
+    }
     // cable management cutouts
-    color("purple")
-      translate([-28, -28 / 2, -eps])
-        cylinder(28 * 3 + eps, cableManagementCutoutDiameter / 2, cableManagementCutoutDiameter / 2);
-    color("purple")
-      translate([-28, 28 / 2, -eps])
-        cylinder(28 * 3 + eps, cableManagementCutoutDiameter / 2, cableManagementCutoutDiameter / 2);
+    if (rearChannelsEnabled) {
+      color("purple")
+        translate([-28, -28 / 2, -eps])
+          cylinder(28 * 3 + eps, cableManagementCutoutDiameter / 2, cableManagementCutoutDiameter / 2);
+      color("purple")
+        translate([-28, 28 / 2, -eps])
+          cylinder(28 * 3 + eps, cableManagementCutoutDiameter / 2, cableManagementCutoutDiameter / 2);
+    }
   }
 }
 
