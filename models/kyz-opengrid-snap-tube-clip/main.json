@@ -1,0 +1,17 @@
+{
+    "fileFormatVersion": "1",
+    "parameterSets": {
+        "IKEA Haverud \/ Hultarp": {
+            "clipExtGap": "10",
+            "clipExtWidth": "5",
+            "clipId": "15.25",
+            "clipThickness": "2.5",
+            "description": "Mount 8x8 OpenGrid Heavy or Hybrid panels in the side of an IKEA Haverud kitchen table with Hultarp rails. ",
+            "lipRadius": "0.5",
+            "snapPosition": "[25, 6]",
+            "snapSupportAmount": "4",
+            "snapSupportHoleSize": "0.65000000000000002",
+            "tubePosition": "above"
+        }
+    }
+}
